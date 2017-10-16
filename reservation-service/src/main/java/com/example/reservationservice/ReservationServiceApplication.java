@@ -1,5 +1,6 @@
 package com.example.reservationservice;
 
+import static java.lang.String.*;
 import static java.util.function.Function.*;
 import static java.util.stream.Collectors.*;
 import static javax.persistence.GenerationType.*;
@@ -28,8 +29,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+import org.springframework.data.rest.core.annotation.RestResource;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,6 +47,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.lang.String;
 
 @Slf4j
 @SpringBootApplication
@@ -65,9 +76,28 @@ public class ReservationServiceApplication {
 	}
 }
 
-@RepositoryRestResource
+@Component
+class ReservationResourceProcessor implements ResourceProcessor<Resource<Reservation>> {
+
+	@Override
+	public Resource<Reservation> process(Resource<Reservation> resource) {
+		Reservation reservation = resource.getContent();
+		String url = format("https://www.google.pl/search?tbm=isch&q=%s",
+				reservation.getName());
+		resource.add(new Link(url, "photo"));
+		return resource;
+	}
+}
+
+@RepositoryRestResource(path = "/reservations")
 interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
+	@RestResource(path = "/byName")
+	List<Reservation> findByName(@Param("name") String name);
+
+	@RestResource(exported = false)
+	@Override
+	void deleteAll();
 }
 
 @Slf4j
@@ -81,12 +111,11 @@ class ReservationController {
 			.map(Reservation::new)
 			.collect(Collectors.toMap(Reservation::getName, identity()));
 
-
 	@GetMapping
-	public List<Reservation> list() {
-		return reservations.keySet().stream().sorted()
+	public Resources<Resource<Reservation>> list() {
+		return Resources.wrap(reservations.keySet().stream().sorted()
 				.map(reservations::get)
-				.collect(toList());
+				.collect(toList()));
 	}
 
 	@GetMapping("/{name}")
