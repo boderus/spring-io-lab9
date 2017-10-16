@@ -1,6 +1,7 @@
 package com.example.reservationservice;
 
 import static java.lang.String.*;
+import static java.lang.System.*;
 import static java.util.function.Function.*;
 import static java.util.stream.Collectors.*;
 import static javax.persistence.GenerationType.*;
@@ -11,10 +12,12 @@ import static org.springframework.http.ResponseEntity.*;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import java.lang.String;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import lombok.AllArgsConstructor;
@@ -22,11 +25,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.repository.query.Param;
@@ -36,7 +42,6 @@ import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.hateoas.Resources;
-import org.springframework.hateoas.mvc.ResourceAssemblerSupport;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -48,8 +53,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.lang.String;
-
 @Slf4j
 @SpringBootApplication
 @EnableJpaRepositories
@@ -59,11 +62,14 @@ public class ReservationServiceApplication {
 		SpringApplication.run(ReservationServiceApplication.class, args);
 	}
 
-	@Autowired
-	ReservationRepository reservations;
+}
+
+@Slf4j
+@Configuration
+class ReservationsExtras {
 
 	@Bean
-	public ApplicationRunner init() {
+	public ApplicationRunner init(ReservationRepository reservations) {
 		return args -> {
 			long count = Arrays
 					.stream("Konrad,Mariusz,Adam,Michal,Lukasz,Przemek,Adam,Kamil,Marcin,Maciek".split(","))
@@ -74,7 +80,23 @@ public class ReservationServiceApplication {
 			log.info("Added {} reservations.", count);
 		};
 	}
+
+	private final Random rng = new Random();
+
+	@Bean
+	public HealthIndicator reservationsHealthIndicator() {
+		return () -> (rng.nextBoolean() ? Health.up() : Health.down())
+				.withDetail("spring", "boot")
+				.build();
+	}
+
+	@Bean
+	public InfoContributor reservationsInfoContributor() {
+		return builder -> builder
+				.withDetail("currentTime", currentTimeMillis()).build();
+	}
 }
+
 
 @Component
 class ReservationResourceProcessor implements ResourceProcessor<Resource<Reservation>> {
