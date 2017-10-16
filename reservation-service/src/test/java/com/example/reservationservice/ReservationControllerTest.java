@@ -22,7 +22,8 @@ public class ReservationControllerTest {
 	public void shouldFindExistingReservation() throws Exception {
 		mvc.perform(get("/reservations/{name}", "Adam"))
 				.andDo(print())
-				.andExpect(status().isOk());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("@.name").value("Adam"));
 	}
 
 	@Test
@@ -32,7 +33,7 @@ public class ReservationControllerTest {
 			.andExpect(status().isNotFound());
 	}
 
-	public void shouldCreateReservation() throws Exception {
+	public void shouldCreateNewReservation() throws Exception {
 
 	}
 
