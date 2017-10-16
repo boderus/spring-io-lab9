@@ -1,9 +1,11 @@
 package com.example.reservationservice;
 
+import static org.springframework.http.MediaType.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +35,26 @@ public class ReservationControllerTest {
 			.andExpect(status().isNotFound());
 	}
 
-	public void shouldCreateNewReservation() throws Exception {
+	@Autowired
+	ObjectMapper json;
 
+	@Test
+	public void shouldCreateNewReservation() throws Exception {
+		mvc.perform(post("/reservations")
+			.contentType(APPLICATION_JSON_UTF8)
+			.content(json.writeValueAsString(new Reservation("John"))))
+			.andDo(print())
+			.andExpect(status().isCreated())
+			.andExpect(header().string("Location", "http://localhost/reservations/John"));
 	}
 
+	@Test
 	public void shouldNotCreateDuplicatedReservation() throws Exception {
-
+		mvc.perform(post("/reservations")
+			.contentType(APPLICATION_JSON_UTF8)
+			.content(json.writeValueAsString(new Reservation("Adam"))))
+			.andDo(print())
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("@.message").value("Reservation for Adam already exists!"));
 	}
 }

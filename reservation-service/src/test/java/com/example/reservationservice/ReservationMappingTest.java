@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.json.JsonContent;
+import org.springframework.boot.test.json.ObjectContent;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
@@ -27,6 +28,12 @@ public class ReservationMappingTest {
 				.isEqualTo("John");
 	}
 
+	@Test
 	public void shouldDeserializeReservation() throws Exception {
+		String data = "{\"name\":\"Jane\"}";
+
+		ObjectContent<Reservation> result = json.parse(data);
+
+		assertThat(result.getObject().getName()).isEqualTo("Jane");
 	}
 }
