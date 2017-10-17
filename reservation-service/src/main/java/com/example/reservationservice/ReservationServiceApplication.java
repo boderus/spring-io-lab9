@@ -33,6 +33,7 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -62,6 +63,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @SpringBootApplication
 @EnableJpaRepositories
+@EnableDiscoveryClient
 public class ReservationServiceApplication {
 
 	public static void main(String[] args) {
