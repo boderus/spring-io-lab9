@@ -127,7 +127,7 @@ class ReservationsExtras {
 
 	private final Random rng = new Random();
 
-	@Bean
+	//@Bean
 	public HealthIndicator reservationsHealthIndicator() {
 		return () -> (rng.nextBoolean() ? Health.up() : Health.down())
 				.withDetail("spring", "boot")
