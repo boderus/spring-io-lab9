@@ -145,12 +145,16 @@ class ReservationsExtras {
 @Component
 class ReservationResourceProcessor implements ResourceProcessor<Resource<Reservation>> {
 
+	@org.springframework.beans.factory.annotation.Value("${info.instanceId}")
+	String instanceId;
+
 	@Override
 	public Resource<Reservation> process(Resource<Reservation> resource) {
 		Reservation reservation = resource.getContent();
 		String url = format("https://www.google.pl/search?tbm=isch&q=%s",
 				reservation.getName());
 		resource.add(new Link(url, "photo"));
+		reservation.setName(reservation.getName() + "-" + instanceId);
 		return resource;
 	}
 }
