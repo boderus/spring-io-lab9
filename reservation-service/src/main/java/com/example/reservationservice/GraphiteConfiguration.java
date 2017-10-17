@@ -11,16 +11,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
-@Profile("graphite")
 @Configuration
 @ConditionalOnProperty(name = "graphite.enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(GraphiteConfig.class)
 public class GraphiteConfiguration {
 
 	@Bean
-	GraphiteReporter graphiteReporter(MetricRegistry registry, GraphiteConfig graphite) {
+	public GraphiteReporter graphiteReporter(MetricRegistry registry, GraphiteConfig graphite) {
 		GraphiteReporter reporter = GraphiteReporter.forRegistry(registry)
 				.prefixedWith("reservations")
 				.build(new Graphite(graphite.host, graphite.port));

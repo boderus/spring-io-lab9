@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.codahale.metrics.MetricRegistry;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,12 +31,17 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.info.InfoContributor;
+import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.rest.core.annotation.HandleAfterCreate;
+import org.springframework.data.rest.core.annotation.HandleAfterDelete;
+import org.springframework.data.rest.core.annotation.HandleAfterSave;
+import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.data.rest.core.annotation.RestResource;
 import org.springframework.hateoas.Link;
@@ -65,11 +71,43 @@ public class ReservationServiceApplication {
 }
 
 @Slf4j
+@Component
+@RepositoryEventHandler
+class ReservationEventHandler {
+
+	private final CounterService counter;
+
+	public ReservationEventHandler(CounterService counter) {
+		this.counter = counter;
+	}
+
+	@HandleAfterCreate(Reservation.class)
+	public void create(Reservation reservation) {
+		log.info("Created reservation for {}.", reservation.getName());
+		counter.increment("count");
+		counter.increment("create");
+	}
+
+	@HandleAfterSave(Reservation.class)
+	public void save(Reservation reservation) {
+		log.info("Updated reservation for {}.", reservation.getName());
+		counter.increment("save");
+	}
+
+	@HandleAfterDelete(Reservation.class)
+	public void delete(Reservation reservation) {
+		log.info("Removed reservation for {}.", reservation.getName());
+		counter.decrement("count");
+		counter.increment("delete");
+	}
+}
+
+@Slf4j
 @Configuration
 class ReservationsExtras {
 
 	@Bean
-	public ApplicationRunner init(ReservationRepository reservations) {
+	public ApplicationRunner init(ReservationRepository reservations, MetricRegistry metricRegistry) {
 		return args -> {
 			long count = Arrays
 					.stream("Konrad,Mariusz,Adam,Michal,Lukasz,Przemek,Adam,Kamil,Marcin,Maciek".split(","))
@@ -77,6 +115,10 @@ class ReservationsExtras {
 					.map(reservations::save)
 					.collect(toList())
 					.size();
+
+			metricRegistry.counter("counter.count").inc(count);
+			metricRegistry.counter("counter.create").inc(count);
+
 			log.info("Added {} reservations.", count);
 		};
 	}
