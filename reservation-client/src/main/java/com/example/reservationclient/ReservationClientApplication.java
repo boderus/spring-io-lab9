@@ -1,5 +1,7 @@
 package com.example.reservationclient;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,6 +16,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.netflix.feign.EnableFeignClients;
+import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.hateoas.Resources;
@@ -27,6 +31,7 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 @SpringBootApplication
 @EnableDiscoveryClient
+@EnableFeignClients
 public class ReservationClientApplication {
 
 	public static void main(String[] args) {
@@ -61,19 +66,29 @@ public class ReservationClientApplication {
 	}
 }
 
+@FeignClient(name = "reservationservice/reservations")
+interface ReservationsClient {
+
+	@GetMapping
+	Resources<Reservation> findAll();
+}
+
 @Slf4j
 @RestController
 @RequestMapping("/client")
 class ReservationsController {
 
 	private final RestTemplate rest;
+	private final ReservationsClient client;
 
-	public ReservationsController(RestTemplate rest) {
+	public ReservationsController(RestTemplate rest, ReservationsClient client) {
 		this.rest = rest;
+		this.client = client;
 	}
 
 	@GetMapping("/names")
 	public List<String> names() {
+		log.info("Calling names...");
 
 		ParameterizedTypeReference<Resources<Reservation>> responseType =
 				new ParameterizedTypeReference<Resources<Reservation>>() {};
@@ -86,6 +101,14 @@ class ReservationsController {
 
 		return result.getBody().getContent().stream()
 				.map(Reservation::getName).collect(Collectors.toList());
+	}
+
+	@GetMapping("/feign-names")
+	public List<String> feignNames() {
+		log.info("Calling feign-names...");
+		return client.findAll().getContent().stream()
+				.map(Reservation::getName)
+				.collect(toList());
 	}
 }
 
