@@ -21,7 +21,6 @@ import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.netflix.feign.EnableFeignClients;
 import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.hateoas.Resources;
 import org.springframework.http.HttpMethod;
@@ -69,6 +68,16 @@ public class ReservationClientApplication {
 	public RestTemplate restTemplate() {
 		return new RestTemplate();
 	}
+}
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
+class ReservationRequest {
+
+	String name;
+	int age;
+
 }
 
 @FeignClient(name = "reservationservice", path = "/reservations", fallback = ReservationsFallback.class)
@@ -133,3 +142,4 @@ class Reservation {
 
 	String name;
 }
+
