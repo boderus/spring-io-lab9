@@ -1,0 +1,12 @@
+spring:
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+      discovery:
+        enabled: false
+
+ribbon:
+  eureka:
+   enabled: false
