@@ -10,7 +10,7 @@ Contract.make {
                 age: 17
         ])
         headers {
-            header('Content-Type', 'application/json')
+            header('Content-Type', 'application/json;charset=UTF-8')
         }
     }
     response {
@@ -19,7 +19,7 @@ Contract.make {
                 eligible: false
         ])
         headers {
-            header('Content-Type', 'application/json')
+            header('Content-Type', 'application/json;charset=UTF-8')
         }
     }
 }

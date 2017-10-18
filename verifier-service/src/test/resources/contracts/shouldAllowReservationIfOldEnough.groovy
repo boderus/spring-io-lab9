@@ -7,10 +7,10 @@ Contract.make {
         method('POST')
         url('/check')
         body([
-                age: 22
+                age: 25
         ])
         headers {
-            header('Content-Type', 'application/json')
+            header('Content-Type', 'application/json;charset=UTF-8')
         }
     }
     response {
@@ -19,7 +19,7 @@ Contract.make {
                 eligible: true
         ])
         headers {
-            header('Content-Type', 'application/json')
+            header('Content-Type', 'application/json;charset=UTF-8')
         }
     }
 }
