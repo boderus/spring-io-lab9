@@ -165,6 +165,7 @@ class ReservationsController {
 
 	@PostMapping
 	public ResponseEntity<?> create(@RequestBody ReservationRequest request) {
+		log.info("Calling create reservation...");
 		VerifierResponse response = verifier.check(new VerifierRequest(request.age));
 		if (response.eligible) {
 			return ResponseEntity.status(CREATED).build();
