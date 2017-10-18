@@ -1,5 +1,6 @@
 package com.example.reservationclient;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
@@ -8,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -29,13 +31,16 @@ import org.springframework.web.client.RestTemplate;
 public class ReservationAgeVerificationTest {
 
 	@MockBean RestTemplate rest;
-	@MockBean ReservationsClient client;
+	@MockBean ReservationsClient reservations;
+	@MockBean VerifierClient verifier;
 	@Autowired ObjectMapper json;
 	@Autowired MockMvc mvc;
 
 	@Test
 	public void should_allow_reservation_if_old_enough() throws Exception {
 		ReservationRequest jane = new ReservationRequest("Jane", 25);
+		when(verifier.check(new VerifierRequest(25)))
+				.thenReturn(new VerifierResponse(true));
 
 		mvc.perform(post("/")
 				.contentType(APPLICATION_JSON_UTF8)
@@ -47,6 +52,8 @@ public class ReservationAgeVerificationTest {
 	@Test
 	public void should_prevent_reservation_if_too_young() throws Exception {
 		ReservationRequest john = new ReservationRequest("John", 17);
+		when(verifier.check(new VerifierRequest(17)))
+				.thenReturn(new VerifierResponse(false));
 
 		mvc.perform(post("/")
 				.contentType(APPLICATION_JSON_UTF8)

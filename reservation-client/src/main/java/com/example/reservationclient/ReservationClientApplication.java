@@ -1,6 +1,8 @@
 package com.example.reservationclient;
 
 import static java.util.stream.Collectors.*;
+import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.MediaType.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +29,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
@@ -70,6 +74,28 @@ public class ReservationClientApplication {
 	}
 }
 
+@FeignClient(name = "verifierservice")
+interface VerifierClient {
+
+	@PostMapping(path = "/check", consumes = APPLICATION_JSON_UTF8_VALUE)
+	VerifierResponse check(@RequestBody VerifierRequest request);
+}
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
+class VerifierRequest {
+	int age;
+}
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
+class VerifierResponse {
+	boolean eligible;
+}
+
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
@@ -102,11 +128,14 @@ class ReservationsFallback implements ReservationsClient {
 class ReservationsController {
 
 	private final RestTemplate rest;
-	private final ReservationsClient client;
+	private final ReservationsClient reservations;
+	private final VerifierClient verifier;
 
-	public ReservationsController(RestTemplate rest, ReservationsClient client) {
+	public ReservationsController(RestTemplate rest, ReservationsClient reservations,
+								  VerifierClient verifier) {
 		this.rest = rest;
-		this.client = client;
+		this.reservations = reservations;
+		this.verifier = verifier;
 	}
 
 	@GetMapping("/names")
@@ -129,9 +158,19 @@ class ReservationsController {
 	@GetMapping("/feign-names")
 	public List<String> feignNames() {
 		log.info("Calling feign-names...");
-		return client.findAll().getContent().stream()
+		return reservations.findAll().getContent().stream()
 				.map(Reservation::getName)
 				.collect(toList());
+	}
+
+	@PostMapping
+	public ResponseEntity<?> create(@RequestBody ReservationRequest request) {
+		VerifierResponse response = verifier.check(new VerifierRequest(request.age));
+		if (response.eligible) {
+			return ResponseEntity.status(CREATED).build();
+		} else {
+			return ResponseEntity.status(EXPECTATION_FAILED).build();
+		}
 	}
 }
 
@@ -142,4 +181,3 @@ class Reservation {
 
 	String name;
 }
-
